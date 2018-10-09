@@ -34,7 +34,10 @@ public class SocketClient : MonoBehaviour
  *  5	-	Create a button that will call the method Connect in this script
  */
 
-    public GameObject head, leftHand, rightHand, leftElbow, rightElbow, spine, leftFoot, rightFoot;
+    public GameObject hipCenter, spine, neck, head, leftShoulder, leftElbow, leftWrist, leftHand, rightShoulder, rightElbow, rightWrist,
+                      rightHand, leftHip, leftKnee, leftAnkle, leftFoot, rightHip, rightKnee, rightAnkle, rightFoot, spineShoulder, leftTipHand,
+                      leftThumb, rightTipHand, rightThumb;
+    public string serverIp;
     public int hostId;
     private int myChan;
     private int socketId; // above Start()
@@ -47,15 +50,37 @@ public class SocketClient : MonoBehaviour
     private float intervalCounter;
     private int countsBetweenSending = 0;
 
+    private byte[] buffer;
+    private byte[] recBuffer;
+    private int bufferSize;
 
     int connectionId;
     // Use this for initialization
     void Start()
     {
 
-        bufferSize = 1024;
+        bufferSize = 2048;  // System.Runtime.InteropServices.Marshal.SizeOf(typeof(MyBody)); 
+        buffer = new byte[bufferSize];
+        recBuffer = new byte[bufferSize];
         initServer();
         myBody = new MyBody(
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
+                    new MyBodyPart(Vector3.one, Quaternion.identity),
                     new MyBodyPart(Vector3.one, Quaternion.identity),
                     new MyBodyPart(Vector3.one, Quaternion.identity),
                     new MyBodyPart(Vector3.one, Quaternion.identity),
@@ -75,8 +100,8 @@ public class SocketClient : MonoBehaviour
     public void Connect()
     {
         string join;
-        //join = inputField.text; //"192.168.1.11"
-        join = "192.168.161.163";
+        //join = "192.168.0.102";
+        join = serverIp;
 
         byte error;
         connectionId = NetworkTransport.Connect(socketId, join, socketPort, 0, out error);
@@ -89,7 +114,7 @@ public class SocketClient : MonoBehaviour
     {
         NetworkTransport.Init();
         ConnectionConfig config = new ConnectionConfig();
-        myChan = config.AddChannel(QosType.Unreliable);
+        myChan = config.AddChannel(QosType.UnreliableFragmented);
         HostTopology topology = new HostTopology(config, 10);
         socketId = NetworkTransport.AddHost(topology, socketPort);
         Debug.Log("Socket Open. SocketId is: " + socketId);
@@ -97,17 +122,15 @@ public class SocketClient : MonoBehaviour
     }
 
     private byte error;
-    private byte[] buffer;
 
-    private BinaryFormatter formatter = new BinaryFormatter();
-    private int bufferSize = 1024;
+    private BinaryFormatter formatter = new BinaryFormatter();    
     private bool sendingData = false;
 
     //call this message to send the data
     public void SendSocketMessage()
     {
 
-        buffer = new byte[bufferSize];
+        //buffer = new byte[bufferSize];
         Stream stream = new MemoryStream(buffer);
 
         //here we calculate the data
@@ -125,15 +148,38 @@ public class SocketClient : MonoBehaviour
 	 * */
     public void populateMyBody()
     {
+        myBody.hipCenter.populate(hipCenter.transform.position, hipCenter.transform.rotation);
+        myBody.spine.populate(spine.transform.position, spine.transform.rotation);
+        myBody.neck.populate(neck.transform.position, neck.transform.rotation);
         myBody.head.populate(head.transform.position, head.transform.rotation);
+
+        myBody.leftShoulder.populate(leftShoulder.transform.position, leftShoulder.transform.rotation);
+        myBody.leftElbow.populate(leftElbow.transform.position, leftElbow.transform.rotation);
+        myBody.leftWrist.populate(leftWrist.transform.position, leftWrist.transform.rotation);
         myBody.leftHand.populate(leftHand.transform.position, leftHand.transform.rotation);
+
+        myBody.rightShoulder.populate(rightShoulder.transform.position, rightShoulder.transform.rotation);
+        myBody.rightElbow.populate(rightElbow.transform.position, rightElbow.transform.rotation);
+        myBody.rightWrist.populate(rightWrist.transform.position, rightWrist.transform.rotation);
         myBody.rightHand.populate(rightHand.transform.position, rightHand.transform.rotation);
 
-        myBody.rightElbow.populate(rightElbow.transform.position, rightElbow.transform.rotation);
-        myBody.leftElbow.populate(leftElbow.transform.position, leftElbow.transform.rotation);
-        myBody.spine.populate(spine.transform.position, spine.transform.rotation);
+        myBody.leftHip.populate(leftHip.transform.position, leftHip.transform.rotation);
+        myBody.leftKnee.populate(leftKnee.transform.position, leftKnee.transform.rotation);
+        myBody.leftAnkle.populate(leftAnkle.transform.position, leftAnkle.transform.rotation);
         myBody.leftFoot.populate(leftFoot.transform.position, leftFoot.transform.rotation);
+
+        myBody.rightHip.populate(rightHip.transform.position, rightHip.transform.rotation);
+        myBody.rightKnee.populate(rightKnee.transform.position, rightKnee.transform.rotation);
+        myBody.rightAnkle.populate(rightAnkle.transform.position, rightAnkle.transform.rotation);
         myBody.rightFoot.populate(rightFoot.transform.position, rightFoot.transform.rotation);
+
+        myBody.spineShoulder.populate(spineShoulder.transform.position, spineShoulder.transform.rotation);
+
+        myBody.leftTipHand.populate(leftTipHand.transform.position, leftTipHand.transform.rotation);
+        myBody.leftThumb.populate(leftThumb.transform.position, leftThumb.transform.rotation);
+
+        myBody.rightTipHand.populate(rightTipHand.transform.position, rightTipHand.transform.rotation);
+        myBody.rightThumb.populate(rightThumb.transform.position, rightThumb.transform.rotation);
     }
 
 
@@ -185,7 +231,7 @@ public class SocketClient : MonoBehaviour
     public void handleSocketConnection()
     {
 
-        byte[] recBuffer = new byte[bufferSize];
+        //byte[] recBuffer = new byte[bufferSize];
         byte error;
         recNetworkEvent = NetworkTransport.Receive(out recHostId, out recConnectionId, out recChannelId, recBuffer, bufferSize, out dataSize, out error);
         switch (recNetworkEvent)
@@ -202,6 +248,7 @@ public class SocketClient : MonoBehaviour
                 break;
             case NetworkEventType.DisconnectEvent:
                 Debug.Log("remote client event disconnected");
+                //Connect();
                 break;
         }
 
@@ -211,41 +258,99 @@ public class SocketClient : MonoBehaviour
 [System.Serializable]
 public struct MyBody
 {
-    public MyBodyPart head, leftHand, rightHand, leftElbow, rightElbow, spine, leftFoot, rightFoot;
-    public MyBody(MyBodyPart p_head, MyBodyPart p_left, MyBodyPart p_right, MyBodyPart p_elb_left, MyBodyPart p_elb_right, MyBodyPart p_spine, MyBodyPart p_foot_left, MyBodyPart p_foot_right)
+    public MyBodyPart hipCenter, spine, neck, head, leftShoulder, leftElbow, leftWrist, leftHand, rightShoulder, rightElbow, rightWrist,
+                      rightHand, leftHip, leftKnee, leftAnkle, leftFoot, rightHip, rightKnee, rightAnkle, rightFoot, spineShoulder, leftTipHand,
+                      leftThumb, rightTipHand, rightThumb;
+    public MyBody(MyBodyPart p_hipCenter, MyBodyPart p_spine, MyBodyPart p_neck, MyBodyPart p_head, MyBodyPart p_leftShoulder, MyBodyPart p_leftElbow, 
+                  MyBodyPart p_leftWrist, MyBodyPart p_leftHand, MyBodyPart p_rightShoulder, MyBodyPart p_rightElbow, MyBodyPart p_rightWrist,
+                  MyBodyPart p_rightHand, MyBodyPart p_leftHip, MyBodyPart p_leftKnee, MyBodyPart p_leftAnkle, MyBodyPart p_leftFoot,
+                  MyBodyPart p_rightHip, MyBodyPart p_rightKnee, MyBodyPart p_rightAnkle, MyBodyPart p_rightFoot, MyBodyPart p_spineShoulder,
+                  MyBodyPart p_leftTipHand, MyBodyPart p_leftThumb, MyBodyPart p_rightTipHand, MyBodyPart p_rightThumb)
     {
-        head = p_head;
-        leftHand = p_left;
-        rightHand = p_right;
-        leftElbow = p_elb_left;
-        rightElbow = p_elb_right;
+        hipCenter = p_hipCenter;
         spine = p_spine;
-        leftFoot = p_foot_left;
-        rightFoot = p_foot_right;
+        neck = p_neck;
+        head = p_head;
+        leftShoulder = p_leftShoulder;
+        leftElbow = p_leftElbow;
+        leftWrist = p_leftWrist;
+        leftHand = p_leftHand;
+        rightShoulder = p_rightShoulder;
+        rightElbow = p_rightElbow;
+        rightWrist = p_rightWrist;
+        rightHand = p_rightHand;
+        leftHip = p_leftHip;
+        leftKnee = p_leftKnee;
+        leftAnkle = p_leftAnkle;
+        leftFoot = p_leftFoot;
+        rightHip = p_rightHip;
+        rightKnee = p_rightKnee;
+        rightAnkle = p_rightAnkle;
+        rightFoot = p_rightFoot;
+        spineShoulder = p_spineShoulder;
+        leftTipHand = p_leftTipHand;
+        leftThumb = p_leftThumb;
+        rightTipHand = p_rightTipHand;
+        rightThumb = p_rightThumb;
     }
+
     public void add(MyBody m)
     {
-        head.add(m.head);
-        leftHand.add(m.leftHand);
-        rightHand.add(m.rightHand);
-        leftElbow.add(m.leftElbow);
-        rightElbow.add(m.rightElbow);
+        hipCenter.add(m.hipCenter);
         spine.add(m.spine);
+        neck.add(m.neck);
+        head.add(m.head);
+        leftShoulder.add(m.leftShoulder);
+        leftElbow.add(m.leftElbow);
+        leftWrist.add(m.leftWrist);
+        leftHand.add(m.leftHand);
+        rightShoulder.add(m.rightShoulder);
+        rightElbow.add(m.rightElbow);
+        rightWrist.add(m.rightWrist);
+        rightHand.add(m.rightHand);
+        leftHip.add(m.leftHip);
+        leftKnee.add(m.leftKnee);
+        leftAnkle.add(m.leftAnkle);
         leftFoot.add(m.leftFoot);
+        rightHip.add(m.rightHip);
+        rightKnee.add(m.rightKnee);
+        rightAnkle.add(m.rightAnkle);
         rightFoot.add(m.rightFoot);
+        spineShoulder.add(m.spineShoulder);
+        leftTipHand.add(m.leftTipHand);
+        leftThumb.add(m.leftThumb);
+        rightTipHand.add(m.rightTipHand);
+        rightThumb.add(m.rightThumb);
 
     }
 
     public void divide(int i)
     {
-        head.divide(i);
-        leftHand.divide(i);
-        rightHand.divide(i);
-        leftElbow.divide(i);
-        rightElbow.divide(i);
+        hipCenter.divide(i);
         spine.divide(i);
+        neck.divide(i);
+        head.divide(i);
+        leftShoulder.divide(i);
+        leftElbow.divide(i);
+        leftWrist.divide(i);
+        leftHand.divide(i);
+        rightShoulder.divide(i);
+        rightElbow.divide(i);
+        rightWrist.divide(i);
+        rightHand.divide(i);
+        leftHip.divide(i);
+        leftKnee.divide(i);
+        leftAnkle.divide(i);
         leftFoot.divide(i);
+        rightHip.divide(i);
+        rightKnee.divide(i);
+        rightAnkle.divide(i);
         rightFoot.divide(i);
+        spineShoulder.divide(i);
+        leftTipHand.divide(i);
+        leftThumb.divide(i);
+        rightTipHand.divide(i);
+        rightThumb.divide(i);
     }
 }
 

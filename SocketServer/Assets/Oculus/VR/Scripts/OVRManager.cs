@@ -1,9 +1,9 @@
 /************************************************************************************
 
-Copyright   :   Copyright 2017 Oculus VR, LLC. All Rights reserved.
+Copyright   :   Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
 
-Licensed under the Oculus VR Rift SDK License Version 3.4.1 (the "License");
-you may not use the Oculus VR Rift SDK except in compliance with the License,
+Licensed under the Oculus SDK License Version 3.4.1 (the "License");
+you may not use the Oculus SDK except in compliance with the License,
 which is provided at the time of installation or download, or which
 otherwise accompanies this software in either electronic or hard copy form.
 
@@ -11,7 +11,7 @@ You may obtain a copy of the License at
 
 https://developer.oculus.com/licenses/sdk-3.4.1
 
-Unless required by applicable law or agreed to in writing, the Oculus VR SDK
+Unless required by applicable law or agreed to in writing, the Oculus SDK
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
@@ -336,6 +336,69 @@ public class OVRManager : MonoBehaviour
 	[RangeAttribute(0.5f, 2.0f)]
 	[Tooltip("Max RenderScale the app can reach under adaptive resolution mode")]
 	public float maxRenderScale = 1.0f;
+
+	/// <summary>
+	/// Set the relative offset rotation of head poses
+	/// </summary>
+	[SerializeField]
+	[Tooltip("Set the relative offset rotation of head poses")]
+	private Vector3 _headPoseRelativeOffsetRotation;
+	public Vector3 headPoseRelativeOffsetRotation
+	{
+		get
+		{
+			return _headPoseRelativeOffsetRotation;
+		}
+		set
+		{
+			OVRPlugin.Quatf rotation;
+			OVRPlugin.Vector3f translation;
+			if (OVRPlugin.GetHeadPoseModifier(out rotation, out translation))
+			{
+				Quaternion finalRotation = Quaternion.Euler(value);
+				rotation = finalRotation.ToQuatf();
+				OVRPlugin.SetHeadPoseModifier(ref rotation, ref translation);
+			}
+			_headPoseRelativeOffsetRotation = value;
+		}
+	}
+
+	/// <summary>
+	/// Set the relative offset translation of head poses
+	/// </summary>
+	[SerializeField]
+	[Tooltip("Set the relative offset translation of head poses")]
+	private Vector3 _headPoseRelativeOffsetTranslation;
+	public Vector3 headPoseRelativeOffsetTranslation
+	{
+		get
+		{
+			OVRPlugin.Quatf rotation;
+			OVRPlugin.Vector3f translation;
+			if (OVRPlugin.GetHeadPoseModifier(out rotation, out translation))
+			{
+				return translation.FromFlippedZVector3f();
+			}
+			else
+			{
+				return Vector3.zero;
+			}
+		}
+		set
+		{
+			OVRPlugin.Quatf rotation;
+			OVRPlugin.Vector3f translation;
+			if (OVRPlugin.GetHeadPoseModifier(out rotation, out translation))
+			{
+				if (translation.FromFlippedZVector3f() != value)
+				{
+					translation = value.ToFlippedZVector3f();
+					OVRPlugin.SetHeadPoseModifier(ref rotation, ref translation);
+				}
+			}
+			_headPoseRelativeOffsetTranslation = value;
+		}
+	}
 
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
 	/// <summary>
@@ -1102,7 +1165,7 @@ public class OVRManager : MonoBehaviour
 		if (OVRPlugin.shouldQuit)
 			Application.Quit();
 
-        if (AllowRecenter && OVRPlugin.shouldRecenter)
+		if (AllowRecenter && OVRPlugin.shouldRecenter)
 		{
 			OVRManager.display.RecenterPose();
 		}
@@ -1132,6 +1195,16 @@ public class OVRManager : MonoBehaviour
 		if (monoscopic != _monoscopic)
 		{
 			monoscopic = _monoscopic;
+		}
+
+		if (headPoseRelativeOffsetRotation != _headPoseRelativeOffsetRotation)
+		{
+			headPoseRelativeOffsetRotation = _headPoseRelativeOffsetRotation;
+		}
+
+		if (headPoseRelativeOffsetTranslation != _headPoseRelativeOffsetTranslation)
+		{
+			headPoseRelativeOffsetTranslation = _headPoseRelativeOffsetTranslation;
 		}
 
 		if (_wasHmdPresent && !isHmdPresent)

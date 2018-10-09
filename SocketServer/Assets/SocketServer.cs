@@ -30,7 +30,9 @@ using System;
 public class SocketServer : MonoBehaviour
 {
 
-    public GameObject headRec, leftHandRec, rightHandRec, leftElbowRec, rightElbowRec, spineRec, leftFootRec, rightFootRec;
+    public GameObject hipCenter, spine, neck, head, leftShoulder, leftElbow, leftWrist, leftHand, rightShoulder, rightElbow, rightWrist,
+                      rightHand, leftHip, leftKnee, leftAnkle, leftFoot, rightHip, rightKnee, rightAnkle, rightFoot, spineShoulder, leftTipHand,
+                      leftThumb, rightTipHand, rightThumb;
     public int hostId;
     private int myChan;
     private int socketId; // above Start()
@@ -41,7 +43,8 @@ public class SocketServer : MonoBehaviour
     void Start()
     {
 
-        bufferSize = 1024;
+        bufferSize = 2048; 
+        recBuffer = new byte[bufferSize];
         initServer();
     }
 
@@ -50,7 +53,7 @@ public class SocketServer : MonoBehaviour
     {
         NetworkTransport.Init();
         ConnectionConfig config = new ConnectionConfig();
-        myChan = config.AddChannel(QosType.Unreliable);
+        myChan = config.AddChannel(QosType.UnreliableFragmented);
         HostTopology topology = new HostTopology(config, 10);
         socketId = NetworkTransport.AddHost(topology, socketPort);
         Debug.Log("Socket Open. SocketId is: " + socketId);
@@ -58,10 +61,9 @@ public class SocketServer : MonoBehaviour
     }
 
     private byte error;
-    private byte[] buffer;
 
     private BinaryFormatter formatter = new BinaryFormatter();
-    private int bufferSize = 1024;
+    private int bufferSize;  
 
     private int recHostId;
     private int recConnectionId;
@@ -73,16 +75,13 @@ public class SocketServer : MonoBehaviour
 
     void Update()
     {
-
         handleSocketConnection();
     }
 
+    private byte[] recBuffer;
+
     public void handleSocketConnection()
     {
-
-        byte[] recBuffer = new byte[bufferSize];
-
-
         byte error;
         recNetworkEvent = NetworkTransport.Receive(out recHostId, out recConnectionId, out recChannelId, recBuffer, bufferSize, out dataSize, out error);
         switch (recNetworkEvent)
@@ -112,17 +111,63 @@ public class SocketServer : MonoBehaviour
     //i ignore the rotation of the head because that is bing controlled by cardboard/gearVR
     public void handleReceivedData()
     {
-        headRec.transform.position = receivedBody.head;
-        headRec.transform.rotation = receivedBody.head;
-        leftHandRec.transform.position = receivedBody.leftHand;
-        leftHandRec.transform.rotation = receivedBody.leftHand;
-        rightHandRec.transform.position = receivedBody.rightHand;
-        rightHandRec.transform.rotation = receivedBody.rightHand;
-        leftElbowRec.transform.position = receivedBody.leftElbow;
-        rightElbowRec.transform.position = receivedBody.rightElbow;
-        spineRec.transform.position = receivedBody.spine;
-        leftFootRec.transform.position = receivedBody.leftFoot;
-        rightFootRec.transform.position = receivedBody.rightFoot;
+        hipCenter.transform.position = receivedBody.hipCenter;
+        hipCenter.transform.rotation = receivedBody.hipCenter;
+        spine.transform.position = receivedBody.spine;
+        spine.transform.rotation = receivedBody.spine;
+        neck.transform.position = receivedBody.neck;
+        neck.transform.rotation = receivedBody.neck;
+        head.transform.position = receivedBody.head;
+        head.transform.rotation = receivedBody.head;
+
+        leftShoulder.transform.position = receivedBody.leftShoulder;
+        leftShoulder.transform.rotation = receivedBody.leftShoulder;
+        leftElbow.transform.position = receivedBody.leftElbow;
+        leftElbow.transform.rotation = receivedBody.leftElbow;
+        leftWrist.transform.position = receivedBody.leftWrist;
+        leftWrist.transform.rotation = receivedBody.leftWrist;
+        leftHand.transform.position = receivedBody.leftHand;
+        leftHand.transform.rotation = receivedBody.leftHand;
+
+        rightShoulder.transform.position = receivedBody.rightShoulder;
+        rightShoulder.transform.rotation = receivedBody.rightShoulder;
+        rightElbow.transform.position = receivedBody.rightElbow;
+        rightElbow.transform.rotation = receivedBody.rightElbow;
+        rightWrist.transform.position = receivedBody.rightWrist;
+        rightWrist.transform.rotation = receivedBody.rightWrist;
+        rightHand.transform.position = receivedBody.rightHand;
+        rightHand.transform.rotation = receivedBody.rightHand;
+
+        leftHip.transform.position = receivedBody.leftHip;
+        leftHip.transform.rotation = receivedBody.leftHip;
+        leftKnee.transform.position = receivedBody.leftKnee;
+        leftKnee.transform.rotation = receivedBody.leftKnee;
+        leftAnkle.transform.position = receivedBody.leftAnkle;
+        leftAnkle.transform.rotation = receivedBody.leftAnkle;
+        leftFoot.transform.position = receivedBody.leftFoot;
+        leftFoot.transform.rotation = receivedBody.leftFoot;
+
+        rightHip.transform.position = receivedBody.rightHip;
+        rightHip.transform.rotation = receivedBody.rightHip;
+        rightKnee.transform.position = receivedBody.rightKnee;
+        rightKnee.transform.rotation = receivedBody.rightKnee;
+        rightAnkle.transform.position = receivedBody.rightAnkle;
+        rightAnkle.transform.rotation = receivedBody.rightAnkle;
+        rightFoot.transform.position = receivedBody.rightFoot;
+        rightFoot.transform.rotation = receivedBody.rightFoot;
+
+        spineShoulder.transform.position = receivedBody.spineShoulder;
+        spineShoulder.transform.rotation = receivedBody.spineShoulder;
+
+        leftTipHand.transform.position = receivedBody.leftTipHand;
+        leftTipHand.transform.rotation = receivedBody.leftTipHand;
+        leftThumb.transform.position = receivedBody.leftThumb;
+        leftThumb.transform.rotation = receivedBody.leftThumb;
+
+        rightTipHand.transform.position = receivedBody.rightTipHand;
+        rightTipHand.transform.rotation = receivedBody.rightTipHand;
+        rightThumb.transform.position = receivedBody.rightThumb;
+        rightThumb.transform.rotation = receivedBody.rightThumb;
     }
 }
 
@@ -130,41 +175,99 @@ public class SocketServer : MonoBehaviour
 [System.Serializable]
 public struct MyBody
 {
-    public MyBodyPart head, leftHand, rightHand, leftElbow, rightElbow, spine, leftFoot, rightFoot;
-    public MyBody(MyBodyPart p_head, MyBodyPart p_left, MyBodyPart p_right, MyBodyPart p_elb_left, MyBodyPart p_elb_right, MyBodyPart p_spine, MyBodyPart p_foot_left, MyBodyPart p_foot_right)
+    public MyBodyPart hipCenter, spine, neck, head, leftShoulder, leftElbow, leftWrist, leftHand, rightShoulder, rightElbow, rightWrist,
+                      rightHand, leftHip, leftKnee, leftAnkle, leftFoot, rightHip, rightKnee, rightAnkle, rightFoot, spineShoulder, leftTipHand,
+                      leftThumb, rightTipHand, rightThumb;
+    public MyBody(MyBodyPart p_hipCenter, MyBodyPart p_spine, MyBodyPart p_neck, MyBodyPart p_head, MyBodyPart p_leftShoulder, MyBodyPart p_leftElbow,
+                  MyBodyPart p_leftWrist, MyBodyPart p_leftHand, MyBodyPart p_rightShoulder, MyBodyPart p_rightElbow, MyBodyPart p_rightWrist,
+                  MyBodyPart p_rightHand, MyBodyPart p_leftHip, MyBodyPart p_leftKnee, MyBodyPart p_leftAnkle, MyBodyPart p_leftFoot,
+                  MyBodyPart p_rightHip, MyBodyPart p_rightKnee, MyBodyPart p_rightAnkle, MyBodyPart p_rightFoot, MyBodyPart p_spineShoulder,
+                  MyBodyPart p_leftTipHand, MyBodyPart p_leftThumb, MyBodyPart p_rightTipHand, MyBodyPart p_rightThumb)
     {
-        head = p_head;
-        leftHand = p_left;
-        rightHand = p_right;
-        leftElbow = p_elb_left;
-        rightElbow = p_elb_right;
+        hipCenter = p_hipCenter;
         spine = p_spine;
-        leftFoot = p_foot_left;
-        rightFoot = p_foot_right;
+        neck = p_neck;
+        head = p_head;
+        leftShoulder = p_leftShoulder;
+        leftElbow = p_leftElbow;
+        leftWrist = p_leftWrist;
+        leftHand = p_leftHand;
+        rightShoulder = p_rightShoulder;
+        rightElbow = p_rightElbow;
+        rightWrist = p_rightWrist;
+        rightHand = p_rightHand;
+        leftHip = p_leftHip;
+        leftKnee = p_leftKnee;
+        leftAnkle = p_leftAnkle;
+        leftFoot = p_leftFoot;
+        rightHip = p_rightHip;
+        rightKnee = p_rightKnee;
+        rightAnkle = p_rightAnkle;
+        rightFoot = p_rightFoot;
+        spineShoulder = p_spineShoulder;
+        leftTipHand = p_leftTipHand;
+        leftThumb = p_leftThumb;
+        rightTipHand = p_rightTipHand;
+        rightThumb = p_rightThumb;
     }
+
     public void add(MyBody m)
     {
-        head.add(m.head);
-        leftHand.add(m.leftHand);
-        rightHand.add(m.rightHand);
-        leftElbow.add(m.leftElbow);
-        rightElbow.add(m.rightElbow);
+        hipCenter.add(m.hipCenter);
         spine.add(m.spine);
+        neck.add(m.neck);
+        head.add(m.head);
+        leftShoulder.add(m.leftShoulder);
+        leftElbow.add(m.leftElbow);
+        leftWrist.add(m.leftWrist);
+        leftHand.add(m.leftHand);
+        rightShoulder.add(m.rightShoulder);
+        rightElbow.add(m.rightElbow);
+        rightWrist.add(m.rightWrist);
+        rightHand.add(m.rightHand);
+        leftHip.add(m.leftHip);
+        leftKnee.add(m.leftKnee);
+        leftAnkle.add(m.leftAnkle);
         leftFoot.add(m.leftFoot);
+        rightHip.add(m.rightHip);
+        rightKnee.add(m.rightKnee);
+        rightAnkle.add(m.rightAnkle);
         rightFoot.add(m.rightFoot);
+        spineShoulder.add(m.spineShoulder);
+        leftTipHand.add(m.leftTipHand);
+        leftThumb.add(m.leftThumb);
+        rightTipHand.add(m.rightTipHand);
+        rightThumb.add(m.rightThumb);
 
     }
 
     public void divide(int i)
     {
-        head.divide(i);
-        leftHand.divide(i);
-        rightHand.divide(i);
-        leftElbow.divide(i);
-        rightElbow.divide(i);
+        hipCenter.divide(i);
         spine.divide(i);
+        neck.divide(i);
+        head.divide(i);
+        leftShoulder.divide(i);
+        leftElbow.divide(i);
+        leftWrist.divide(i);
+        leftHand.divide(i);
+        rightShoulder.divide(i);
+        rightElbow.divide(i);
+        rightWrist.divide(i);
+        rightHand.divide(i);
+        leftHip.divide(i);
+        leftKnee.divide(i);
+        leftAnkle.divide(i);
         leftFoot.divide(i);
+        rightHip.divide(i);
+        rightKnee.divide(i);
+        rightAnkle.divide(i);
         rightFoot.divide(i);
+        spineShoulder.divide(i);
+        leftTipHand.divide(i);
+        leftThumb.divide(i);
+        rightTipHand.divide(i);
+        rightThumb.divide(i);
     }
 }
 
@@ -246,4 +349,3 @@ public struct MyBodyPart
         return new Vector3(rValue.x, rValue.y, rValue.z);
     }
 }
-

@@ -1,9 +1,9 @@
 /************************************************************************************
 
-Copyright   :   Copyright 2017 Oculus VR, LLC. All Rights reserved.
+Copyright   :   Copyright (c) Facebook Technologies, LLC and its affiliates. All rights reserved.
 
-Licensed under the Oculus VR Rift SDK License Version 3.4.1 (the "License");
-you may not use the Oculus VR Rift SDK except in compliance with the License,
+Licensed under the Oculus SDK License Version 3.4.1 (the "License");
+you may not use the Oculus SDK except in compliance with the License,
 which is provided at the time of installation or download, or which
 otherwise accompanies this software in either electronic or hard copy form.
 
@@ -11,7 +11,7 @@ You may obtain a copy of the License at
 
 https://developer.oculus.com/licenses/sdk-3.4.1
 
-Unless required by applicable law or agreed to in writing, the Oculus VR SDK
+Unless required by applicable law or agreed to in writing, the Oculus SDK
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
@@ -40,7 +40,7 @@ public static class OVRPlugin
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 	public static readonly System.Version wrapperVersion = _versionZero;
 #else
-	public static readonly System.Version wrapperVersion = OVRP_1_28_0.version;
+	public static readonly System.Version wrapperVersion = OVRP_1_29_0.version;
 #endif
 
 	private static System.Version _version;
@@ -432,6 +432,15 @@ public static class OVRPlugin
 		public Vector3f AngularVelocity;
 		public Vector3f AngularAcceleration;
 		double Time;
+
+		public static readonly PoseStatef identity = new PoseStatef
+		{
+			Pose = Posef.identity,
+			Velocity = Vector3f.zero,
+			Acceleration = Vector3f.zero,
+			AngularVelocity = Vector3f.zero,
+			AngularAcceleration = Vector3f.zero
+		};
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
@@ -772,6 +781,7 @@ public static class OVRPlugin
 		ChromaticAberrationCorrection = (1 << 4),
 		NoAllocation = (1 << 5),
 		ProtectedContent = (1 << 6),
+		AndroidSurfaceSwapChain = (1 << 7),
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
@@ -1206,10 +1216,13 @@ public static class OVRPlugin
 
 	public static string latency 
 	{ 
-		get { 
+		get {
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 			return string.Empty;
 #else
+			if (!initialized)
+				return string.Empty;
+
 			return OVRP_1_1_0.ovrp_GetAppLatencyTimings(); 
 #endif
 		} 
@@ -1221,6 +1234,9 @@ public static class OVRPlugin
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 			return 0.0f;
 #else
+			if (!initialized)
+				return 0.0f;
+
 			return OVRP_1_1_0.ovrp_GetUserEyeDepth(); 
 #endif
 		}
@@ -1362,13 +1378,16 @@ public static class OVRPlugin
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 			return false;
 #else
-			return OVRP_1_3_0.ovrp_GetEyeOcclusionMeshEnabled() == Bool.True; 
+			return initialized && (OVRP_1_3_0.ovrp_GetEyeOcclusionMeshEnabled() == Bool.True);
 #endif
 		}
 		set { 
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
 			return;
 #else
+			if (!initialized)
+				return;
+
 			OVRP_1_3_0.ovrp_SetEyeOcclusionMeshEnabled(ToBool(value)); 
 #endif
 		}
@@ -1570,6 +1589,20 @@ public static class OVRPlugin
 #endif
 	}
 
+	public static IntPtr GetLayerAndroidSurfaceObject(int layerId)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return IntPtr.Zero;
+#else
+		IntPtr surfaceObject = IntPtr.Zero;
+
+		if (version >= OVRP_1_29_0.version)
+			OVRP_1_29_0.ovrp_GetLayerAndroidSurfaceObject(layerId, ref surfaceObject);
+
+		return surfaceObject;
+#endif
+	}
+
 	public static bool UpdateNodePhysicsPoses(int frameIndex, double predictionSeconds)
 	{
 #if OVRPLUGIN_UNSUPPORTED_PLATFORM
@@ -1675,6 +1708,31 @@ public static class OVRPlugin
 		return false;
 #else
 		return OVRP_1_1_0.ovrp_GetNodePositionTracked(nodeId) == Bool.True;
+#endif
+	}
+
+	public static PoseStatef GetNodePoseStateRaw(Node nodeId, Step stepId)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return PoseStatef.identity;
+#else
+		if (version >= OVRP_1_29_0.version)
+		{
+			PoseStatef nodePoseState;
+			Result result = OVRP_1_29_0.ovrp_GetNodePoseStateRaw(stepId, -1, nodeId, out nodePoseState);
+			if (result == Result.Success)
+			{
+				return nodePoseState;
+			}
+			else
+			{
+				return PoseStatef.identity;
+			}
+		}
+		if (version >= OVRP_1_12_0.version)
+			return OVRP_1_12_0.ovrp_GetNodePoseState(stepId, nodeId);
+		else
+			return PoseStatef.identity;
 #endif
 	}
 
@@ -3019,6 +3077,42 @@ public static class OVRPlugin
 #endif
 	}
 
+	public static bool SetHeadPoseModifier(ref Quatf relativeRotation, ref Vector3f relativeTranslation)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		return false;
+#else
+		if (version >= OVRP_1_29_0.version)
+		{
+			return OVRP_1_29_0.ovrp_SetHeadPoseModifier(ref relativeRotation, ref relativeTranslation) == Result.Success;
+		}
+		else
+		{
+			return false;
+		}
+#endif
+	}
+
+	public static bool GetHeadPoseModifier(out Quatf relativeRotation, out Vector3f relativeTranslation)
+	{
+#if OVRPLUGIN_UNSUPPORTED_PLATFORM
+		relativeRotation = Quatf.identity;
+		relativeTranslation = Vector3f.zero;
+		return false;
+#else
+		if (version >= OVRP_1_29_0.version)
+		{
+			return OVRP_1_29_0.ovrp_GetHeadPoseModifier(out relativeRotation, out relativeTranslation) == Result.Success;
+		}
+		else
+		{
+			relativeRotation = Quatf.identity;
+			relativeTranslation = Vector3f.zero;
+			return false;
+		}
+#endif
+	}
+
 	private const string pluginName = "OVRPlugin";
 	private static System.Version _versionZero = new System.Version(0, 0, 0);
 
@@ -3604,6 +3698,23 @@ public static class OVRPlugin
 
 		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result ovrp_EnqueueSetupLayer2(ref LayerDesc desc, int compositionDepth, IntPtr layerId);
+	}
+
+	private static class OVRP_1_29_0
+	{
+		public static readonly System.Version version = new System.Version(1, 29, 0);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_GetLayerAndroidSurfaceObject(int layerId, ref IntPtr surfaceObject);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_SetHeadPoseModifier(ref Quatf relativeRotation, ref Vector3f relativeTranslation);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_GetHeadPoseModifier(out Quatf relativeRotation, out Vector3f relativeTranslation);
+
+		[DllImport(pluginName, CallingConvention = CallingConvention.Cdecl)]
+		public static extern Result ovrp_GetNodePoseStateRaw(Step stepId, int frameIndex, Node nodeId, out PoseStatef nodePoseState);
 	}
 
 #endif // !OVRPLUGIN_UNSUPPORTED_PLATFORM
