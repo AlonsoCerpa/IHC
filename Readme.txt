@@ -17,3 +17,4 @@ Pasos para ejecutar el juego:
 9. Hacer click en Play en el proyecto SocketClient.
 10. Abrir KinectStudio y conectar el Kinect a la PC donde este el proyecto "SocketClient".
 11. Dentro de KinectStudio hacer click en "Conectar" y luego en PlayFile.
+12. Ponerse el Oculus Go y empezar a jugar.
